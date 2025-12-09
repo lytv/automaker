@@ -68,13 +68,6 @@
     "status": "backlog"
   },
   {
-    "id": "feature-1765261574969-kaqzq39fh",
-    "category": "Core",
-    "description": "change the recent change for adding the ability to edit the context .automaker/context directory to instead be in .automaker/support and auto add it to prompts",
-    "steps": [],
-    "status": "in_progress"
-  },
-  {
     "id": "feature-1765262225700-q2rkue6l8",
     "category": "Context",
     "description": "Add Context File should show a file name and a textarea for the context info, that text area should allow drag n drop for txt files and .md files which the system will parse and put into the text area",
