@@ -58,7 +58,7 @@ export interface AutoModeEvent {
 }
 
 export interface AutoModeAPI {
-  start: (projectPath: string) => Promise<{ success: boolean; error?: string }>;
+  start: (projectPath: string, maxConcurrency?: number) => Promise<{ success: boolean; error?: string }>;
   stop: () => Promise<{ success: boolean; error?: string }>;
   stopFeature: (featureId: string) => Promise<{ success: boolean; error?: string }>;
   status: () => Promise<{ success: boolean; isRunning?: boolean; currentFeatureId?: string | null; runningFeatures?: string[]; error?: string }>;
@@ -370,12 +370,13 @@ let mockAutoModeTimeouts = new Map<string, NodeJS.Timeout>(); // Track timeouts 
 
 function createMockAutoModeAPI(): AutoModeAPI {
   return {
-    start: async (projectPath: string) => {
+    start: async (projectPath: string, maxConcurrency?: number) => {
       if (mockAutoModeRunning) {
         return { success: false, error: "Auto mode is already running" };
       }
 
       mockAutoModeRunning = true;
+      console.log(`[Mock] Auto mode started with maxConcurrency: ${maxConcurrency || 3}`);
       const featureId = "auto-mode-0";
       mockRunningFeatures.add(featureId);
 
