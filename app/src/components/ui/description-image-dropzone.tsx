@@ -292,7 +292,7 @@ export function DescriptionImageDropZone({
         <button
           type="button"
           onClick={handleBrowseClick}
-          className="text-blue-500 hover:text-blue-400 underline"
+          className="text-primary hover:text-primary/80 underline"
           disabled={disabled || isProcessing}
         >
           browse
