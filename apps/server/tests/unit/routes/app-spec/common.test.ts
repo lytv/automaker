@@ -2,8 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import {
   setRunningState,
   getErrorMessage,
-  isRunning,
-  currentAbortController,
+  getSpecRegenerationStatus,
 } from "@/routes/app-spec/common.js";
 
 describe("app-spec/common.ts", () => {
@@ -15,33 +14,35 @@ describe("app-spec/common.ts", () => {
   describe("setRunningState", () => {
     it("should set isRunning to true when running is true", () => {
       setRunningState(true);
-      expect(isRunning).toBe(true);
+      expect(getSpecRegenerationStatus().isRunning).toBe(true);
     });
 
     it("should set isRunning to false when running is false", () => {
       setRunningState(true);
       setRunningState(false);
-      expect(isRunning).toBe(false);
+      expect(getSpecRegenerationStatus().isRunning).toBe(false);
     });
 
     it("should set currentAbortController when provided", () => {
       const controller = new AbortController();
       setRunningState(true, controller);
-      expect(currentAbortController).toBe(controller);
+      expect(getSpecRegenerationStatus().currentAbortController).toBe(
+        controller
+      );
     });
 
     it("should set currentAbortController to null when not provided", () => {
       const controller = new AbortController();
       setRunningState(true, controller);
       setRunningState(false);
-      expect(currentAbortController).toBe(null);
+      expect(getSpecRegenerationStatus().currentAbortController).toBe(null);
     });
 
     it("should set currentAbortController to null when explicitly passed null", () => {
       const controller = new AbortController();
       setRunningState(true, controller);
       setRunningState(true, null);
-      expect(currentAbortController).toBe(null);
+      expect(getSpecRegenerationStatus().currentAbortController).toBe(null);
     });
 
     it("should update state multiple times correctly", () => {
@@ -49,16 +50,20 @@ describe("app-spec/common.ts", () => {
       const controller2 = new AbortController();
 
       setRunningState(true, controller1);
-      expect(isRunning).toBe(true);
-      expect(currentAbortController).toBe(controller1);
+      expect(getSpecRegenerationStatus().isRunning).toBe(true);
+      expect(getSpecRegenerationStatus().currentAbortController).toBe(
+        controller1
+      );
 
       setRunningState(true, controller2);
-      expect(isRunning).toBe(true);
-      expect(currentAbortController).toBe(controller2);
+      expect(getSpecRegenerationStatus().isRunning).toBe(true);
+      expect(getSpecRegenerationStatus().currentAbortController).toBe(
+        controller2
+      );
 
       setRunningState(false, null);
-      expect(isRunning).toBe(false);
-      expect(currentAbortController).toBe(null);
+      expect(getSpecRegenerationStatus().isRunning).toBe(false);
+      expect(getSpecRegenerationStatus().currentAbortController).toBe(null);
     });
   });
 
