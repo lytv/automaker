@@ -4,7 +4,6 @@ import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { useAppStore, formatShortcut, type ThemeMode } from "@/store/app-store";
 import { CoursePromoBadge } from "@/components/ui/course-promo-badge";
-import { IS_MARKETING } from "@/config/app-config";
 import {
   FolderOpen,
   Plus,
@@ -836,15 +835,7 @@ export function Sidebar() {
                 sidebarOpen ? "hidden lg:block" : "hidden"
               )}
             >
-              {IS_MARKETING ? (
-                <>
-                  https://<span className="text-brand-500">automaker</span>.app
-                </>
-              ) : (
-                <>
-                  Auto<span className="text-brand-500">maker</span>
-                </>
-              )}
+              Auto<span className="text-brand-500">maker</span>
             </span>
           </div>
           {/* Bug Report Button */}
