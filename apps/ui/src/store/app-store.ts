@@ -51,6 +51,8 @@ export type ThemeMode =
 
 export type KanbanCardDetailLevel = 'minimal' | 'standard' | 'detailed';
 
+export type BoardViewMode = 'kanban' | 'graph';
+
 export interface ApiKeys {
   anthropic: string;
   google: string;
@@ -450,6 +452,7 @@ export interface AppState {
 
   // Kanban Card Display Settings
   kanbanCardDetailLevel: KanbanCardDetailLevel; // Level of detail shown on kanban cards
+  boardViewMode: BoardViewMode; // Whether to show kanban or dependency graph view
 
   // Feature Default Settings
   defaultSkipTests: boolean; // Default value for skip tests when creating new features
@@ -713,6 +716,7 @@ export interface AppActions {
 
   // Kanban Card Settings actions
   setKanbanCardDetailLevel: (level: KanbanCardDetailLevel) => void;
+  setBoardViewMode: (mode: BoardViewMode) => void;
 
   // Feature Default Settings actions
   setDefaultSkipTests: (skip: boolean) => void;
@@ -916,6 +920,7 @@ const initialState: AppState = {
   autoModeActivityLog: [],
   maxConcurrency: 3, // Default to 3 concurrent agents
   kanbanCardDetailLevel: 'standard', // Default to standard detail level
+  boardViewMode: 'kanban', // Default to kanban view
   defaultSkipTests: true, // Default to manual verification (tests disabled)
   enableDependencyBlocking: true, // Default to enabled (show dependency blocking UI)
   useWorktrees: false, // Default to disabled (worktree feature is experimental)
@@ -1466,6 +1471,7 @@ export const useAppStore = create<AppState & AppActions>()(
 
       // Kanban Card Settings actions
       setKanbanCardDetailLevel: (level) => set({ kanbanCardDetailLevel: level }),
+      setBoardViewMode: (mode) => set({ boardViewMode: mode }),
 
       // Feature Default Settings actions
       setDefaultSkipTests: (skip) => set({ defaultSkipTests: skip }),
@@ -2673,6 +2679,7 @@ export const useAppStore = create<AppState & AppActions>()(
           sidebarOpen: state.sidebarOpen,
           chatHistoryOpen: state.chatHistoryOpen,
           kanbanCardDetailLevel: state.kanbanCardDetailLevel,
+          boardViewMode: state.boardViewMode,
           // Settings
           apiKeys: state.apiKeys,
           maxConcurrency: state.maxConcurrency,
