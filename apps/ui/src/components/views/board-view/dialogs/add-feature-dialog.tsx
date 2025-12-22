@@ -16,6 +16,7 @@ import { CategoryAutocomplete } from '@/components/ui/category-autocomplete';
 import {
   DescriptionImageDropZone,
   FeatureImagePath as DescriptionImagePath,
+  FeatureTextFilePath as DescriptionTextFilePath,
   ImagePreviewMap,
 } from '@/components/ui/description-image-dropzone';
 import {
@@ -64,6 +65,7 @@ interface AddFeatureDialogProps {
     steps: string[];
     images: FeatureImage[];
     imagePaths: DescriptionImagePath[];
+    textFilePaths: DescriptionTextFilePath[];
     skipTests: boolean;
     model: AgentModel;
     thinkingLevel: ThinkingLevel;
@@ -106,6 +108,7 @@ export function AddFeatureDialog({
     steps: [''],
     images: [] as FeatureImage[],
     imagePaths: [] as DescriptionImagePath[],
+    textFilePaths: [] as DescriptionTextFilePath[],
     skipTests: false,
     model: 'opus' as AgentModel,
     thinkingLevel: 'none' as ThinkingLevel,
@@ -193,6 +196,7 @@ export function AddFeatureDialog({
       steps: newFeature.steps.filter((s) => s.trim()),
       images: newFeature.images,
       imagePaths: newFeature.imagePaths,
+      textFilePaths: newFeature.textFilePaths,
       skipTests: newFeature.skipTests,
       model: selectedModel,
       thinkingLevel: normalizedThinking,
@@ -210,6 +214,7 @@ export function AddFeatureDialog({
       steps: [''],
       images: [],
       imagePaths: [],
+      textFilePaths: [],
       skipTests: defaultSkipTests,
       model: 'opus',
       priority: 2,
@@ -331,6 +336,10 @@ export function AddFeatureDialog({
                 }}
                 images={newFeature.imagePaths}
                 onImagesChange={(images) => setNewFeature({ ...newFeature, imagePaths: images })}
+                textFiles={newFeature.textFilePaths}
+                onTextFilesChange={(textFiles) =>
+                  setNewFeature({ ...newFeature, textFilePaths: textFiles })
+                }
                 placeholder="Describe the feature..."
                 previewMap={newFeaturePreviewMap}
                 onPreviewMapChange={setNewFeaturePreviewMap}
