@@ -28,8 +28,9 @@ export function useSpecLoading() {
           setIsLoading(false);
           return;
         }
-        setIsGenerationRunning(false);
       }
+      // Always reset when generation is not running (handles edge case where api.specRegeneration might not be available)
+      setIsGenerationRunning(false);
 
       const result = await api.readFile(`${currentProject.path}/.automaker/app_spec.txt`);
 
