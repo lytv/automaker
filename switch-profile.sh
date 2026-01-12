@@ -117,11 +117,24 @@ FOOTER
 # Stop server and UI
 stop_all() {
     echo -e "${YELLOW}Stopping server and UI...${NC}"
-    pkill -f "tsx watch.*automaker" 2>/dev/null || true
-    pkill -f "node.*automaker.*3008" 2>/dev/null || true
-    pkill -f "vite.*3007" 2>/dev/null || true
-    pkill -f "vite" 2>/dev/null || true
+
+    # Kill by port first (most reliable for preventing EADDRINUSE)
+    if command -v lsof >/dev/null; then
+        lsof -ti:3008 | xargs kill -9 2>/dev/null || true
+        lsof -ti:3007 | xargs kill -9 2>/dev/null || true
+    fi
+
+    # Kill by process name pattern
+    pkill -f "tsx watch src/index.ts" 2>/dev/null || true
+    pkill -f "node.*vite" 2>/dev/null || true
+    
+    # Wait a moment
     sleep 1
+    
+    # Force kill if still running
+    pkill -9 -f "tsx watch src/index.ts" 2>/dev/null || true
+    pkill -9 -f "node.*vite" 2>/dev/null || true
+
     echo -e "${GREEN}✓ Server and UI stopped${NC}"
 }
 
@@ -130,8 +143,8 @@ start_full() {
     echo -e "${CYAN}Starting server and UI...${NC}"
     cd "$AUTOMAKER_DIR"
     # Start both without rebuilding packages (faster)
-    npm run _dev:server &>/dev/null &
-    npm run _dev:web &>/dev/null &
+    npm run _dev:server > "$AUTOMAKER_DIR/server.log" 2>&1 &
+    npm run _dev:web > "$AUTOMAKER_DIR/ui.log" 2>&1 &
 
     # Wait for both to be ready
     echo -n "Waiting for services"
