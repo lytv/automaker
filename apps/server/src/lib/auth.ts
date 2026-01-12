@@ -1,3 +1,4 @@
+import './env-loader.js';
 /**
  * Authentication middleware for API security
  *

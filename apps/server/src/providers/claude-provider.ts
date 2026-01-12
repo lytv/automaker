@@ -21,7 +21,18 @@ import type {
 // Explicit allowlist of environment variables to pass to the SDK.
 // Only these vars are passed - nothing else from process.env leaks through.
 const ALLOWED_ENV_VARS = [
+  // Authentication
   'ANTHROPIC_API_KEY',
+  'ANTHROPIC_AUTH_TOKEN',
+  // Custom API endpoint (for proxy servers)
+  'ANTHROPIC_BASE_URL',
+  // Model configuration
+  'ANTHROPIC_MODEL',
+  'ANTHROPIC_DEFAULT_OPUS_MODEL',
+  'ANTHROPIC_DEFAULT_SONNET_MODEL',
+  'ANTHROPIC_DEFAULT_HAIKU_MODEL',
+  'CLAUDE_CODE_SUBAGENT_MODEL',
+  // System environment
   'PATH',
   'HOME',
   'SHELL',
@@ -40,6 +51,17 @@ function buildEnv(): Record<string, string | undefined> {
     if (process.env[key]) {
       env[key] = process.env[key];
     }
+  }
+  // Log non-sensitive env vars for debugging (only when proxy is configured)
+  if (process.env.ANTHROPIC_BASE_URL) {
+    const safeEnvKeys = Object.keys(env).filter(
+      (k) => !['ANTHROPIC_API_KEY', 'ANTHROPIC_AUTH_TOKEN'].includes(k)
+    );
+    logger.debug('Environment variables passed to SDK:', {
+      keys: safeEnvKeys,
+      HAS_API_KEY: !!env.ANTHROPIC_API_KEY,
+      HAS_AUTH_TOKEN: !!env.ANTHROPIC_AUTH_TOKEN,
+    });
   }
   return env;
 }
@@ -73,9 +95,20 @@ export class ClaudeProvider extends BaseProvider {
     // Convert thinking level to token budget
     const maxThinkingTokens = getThinkingTokenBudget(thinkingLevel);
 
+    // When using a custom proxy (ANTHROPIC_BASE_URL), use ANTHROPIC_MODEL env var
+    // or the model mapping env vars if available
+    const useProxyModel = !!process.env.ANTHROPIC_BASE_URL;
+    let effectiveModel = model;
+
+    if (useProxyModel && process.env.ANTHROPIC_MODEL) {
+      // Use ANTHROPIC_MODEL from environment for proxy mode
+      effectiveModel = process.env.ANTHROPIC_MODEL;
+      logger.info(`Proxy mode: Using ANTHROPIC_MODEL=${effectiveModel} instead of ${model}`);
+    }
+
     // Build Claude SDK options
     const sdkOptions: Options = {
-      model,
+      model: effectiveModel,
       systemPrompt,
       maxTurns,
       cwd,
@@ -125,26 +158,47 @@ export class ClaudeProvider extends BaseProvider {
 
     // Execute via Claude Agent SDK
     try {
+      logger.info('Calling Claude SDK query() with model:', model);
       const stream = query({ prompt: promptPayload, options: sdkOptions });
 
+      let chunkCount = 0;
       // Stream messages directly - they're already in the correct format
       for await (const msg of stream) {
-        yield msg as ProviderMessage;
+        chunkCount++;
+        const providerMsg = msg as ProviderMessage;
+
+        // Log EVERY chunk to debug stream issues
+        const content = providerMsg.message?.content;
+        let snippet = 'N/A';
+
+        if (Array.isArray(content) && content.length > 0) {
+          const block = content[0];
+          snippet = `[${block.type}] ${block.text?.substring(0, 50) || block.thinking?.substring(0, 50) || block.name || ''}`;
+        } else if (providerMsg.error) {
+          snippet = `[Error] ${providerMsg.error}`;
+        } else if (providerMsg.result) {
+          snippet = `[Result] ${providerMsg.result.substring(0, 50)}`;
+        }
+
+        logger.info(
+          `[Chunk ${chunkCount}] Type: ${providerMsg.type}, Subtype: ${providerMsg.subtype || 'none'}, Snippet: ${snippet}`
+        );
+
+        yield providerMsg;
       }
+      logger.info(`Stream completed successfully with ${chunkCount} chunks`);
     } catch (error) {
+      logger.error('Claude SDK error caught in provider:', error);
       // Enhance error with user-friendly message and classification
       const errorInfo = classifyError(error);
       const userMessage = getUserFriendlyErrorMessage(error);
 
-      logger.error('executeQuery() error during execution:', {
-        type: errorInfo.type,
-        message: errorInfo.message,
-        isRateLimit: errorInfo.isRateLimit,
-        retryAfter: errorInfo.retryAfter,
-        stack: (error as Error).stack,
+      logger.error('executeQuery() error details:', {
+        message: error instanceof Error ? error.message : String(error),
+        errorInfo,
+        userMessage,
       });
 
-      // Build enhanced error message with additional guidance for rate limits
       const message = errorInfo.isRateLimit
         ? `${userMessage}\n\nTip: If you're running multiple features in auto-mode, consider reducing concurrency (maxConcurrency setting) to avoid hitting rate limits.`
         : userMessage;

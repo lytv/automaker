@@ -5,6 +5,9 @@
  * Providers register themselves on import, making it easy to add new providers.
  */
 
+// Ensure environment variables are loaded before provider registration
+import '../lib/env-loader.js';
+
 import { BaseProvider } from './base-provider.js';
 import type { InstallationStatus, ModelDefinition } from './types.js';
 import { isCursorModel, isCodexModel, isOpencodeModel, type ModelProvider } from '@automaker/types';
@@ -269,15 +272,38 @@ import { CodexProvider } from './codex-provider.js';
 import { OpencodeProvider } from './opencode-provider.js';
 
 // Register Claude provider
+// When using a custom proxy (ANTHROPIC_BASE_URL), give Claude highest priority
+// so it handles custom model names before other providers
+const claudePriority = process.env.ANTHROPIC_BASE_URL ? 100 : 0;
+
 registerProvider('claude', {
   factory: () => new ClaudeProvider(),
   aliases: ['anthropic'],
   canHandleModel: (model: string) => {
-    return (
-      model.startsWith('claude-') || ['opus', 'sonnet', 'haiku'].some((n) => model.includes(n))
-    );
+    // Standard Claude model patterns
+    const isClaudePattern =
+      model.startsWith('claude-') || ['opus', 'sonnet', 'haiku'].some((n) => model.includes(n));
+
+    if (isClaudePattern) return true;
+
+    // When using a custom proxy (ANTHROPIC_BASE_URL), handle custom model names
+    // that don't match other providers (like Gemini models via proxy)
+    if (process.env.ANTHROPIC_BASE_URL) {
+      // Only claim the model if it's NOT a cursor/codex/opencode model
+      const isOtherProvider =
+        model.startsWith('cursor-') ||
+        model.startsWith('codex-') ||
+        model.startsWith('opencode-') ||
+        model.startsWith('gpt-');
+
+      if (!isOtherProvider) {
+        return true;
+      }
+    }
+
+    return false;
   },
-  priority: 0, // Default priority
+  priority: claudePriority,
 });
 
 // Register Cursor provider
